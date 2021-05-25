@@ -31,9 +31,14 @@ def expmax(distr, hist):
         p1 = norm.pdf((val+0.5-mu)/sd)
         p2 = norm.pdf((val+0.5-mu*2)/(sd))
         ptot = p0 + p1 + p2 
-        h0[val] = cnt*p0/ptot
-        h1[val] = cnt*p1/ptot
-        h2[val] = cnt*p2/ptot
+        if ptot == 0: # we are too high to detect
+            h0[val] = 0
+            h1[val] = 0
+            h2[val] = cnt
+        else:
+            h0[val] = cnt*p0/ptot
+            h1[val] = cnt*p1/ptot
+            h2[val] = cnt*p2/ptot
     # estimate the parameters
     print('estimates:',estimate(h0),estimate(h1),estimate(h2))
     mu0, sd0 = estimate(h0)
