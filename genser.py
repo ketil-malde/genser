@@ -4,7 +4,7 @@ from math import sqrt
 # for distributions around mu/2, mu, and 2*mu
 # distr = None # (mu, k0, k1, k2)
 
-# copy from above
+# estimate a normal distribution for a histogram
 def estimate(hist):
     n = s = ss = 0
     ls = sorted(hist.items())
