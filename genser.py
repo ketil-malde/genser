@@ -27,23 +27,19 @@ def expmax(distr, hist):
     mu, sd, k0, k1, k2 = distr
     # assign histogram to distrib
     for val,cnt in hist.items():
+        pz = 0.0001  # uniform
         p0 = norm.pdf((val+0.5-mu/2)/(sd/2))  # prob of val under N(mu/2, sd/2)
         p1 = norm.pdf((val+0.5-mu)/sd)
         p2 = norm.pdf((val+0.5-mu*2)/(sd))
-        ptot = p0 + p1 + p2 
-        if ptot == 0: # we are too high to detect
-            h0[val] = 0
-            h1[val] = 0
-            h2[val] = cnt
-        else:
-            h0[val] = cnt*p0/ptot
-            h1[val] = cnt*p1/ptot
-            h2[val] = cnt*p2/ptot
+        ptot = p0 + p1 + p2 + pz
+        h0[val] = cnt*p0/ptot
+        h1[val] = cnt*p1/ptot
+        h2[val] = cnt*p2/ptot
     # estimate the parameters
-    print('estimates:',estimate(h0),estimate(h1),estimate(h2))
     mu0, sd0 = estimate(h0)
     mu1, sd1 = estimate(h1)
     mu2, sd2 = estimate(h2)
+    print('  est:', (mu0,sd0), (mu1,sd1), (mu2,sd2))
     # weight estimate
     n0, n1, n2 = sum(h0.values()), sum(h1.values()), sum(h2.values())
     return ((mu0*2*n0 + mu1*n1 + mu2/2*n2)/(n0+n1+n2), (sd0*2*n0 + sd1*n1 + sd2*n2/2)/(n0+n1+n2), n0, n1, n2)
