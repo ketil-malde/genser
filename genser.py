@@ -54,9 +54,9 @@ def errors(dist, hist):
     errs = {}
     mu, sd, k0, k1, k2 = dist
     for val, cnt in hist.items():
-        e = cnt - (k0*norm.pdf((val+0-5-mu/2)/(sd/2))
-                   + k1**norm.pdf((val+0.5-mu)/sd)
-                   + k2*norm.pdf((val+0.5-mu*2)/(sd*2)))
+        e = cnt - (  k0 * norm.pdf( (val+0.5-mu/2)/(sd/2))
+                   + k1 * norm.pdf( (val+0.5-mu)  / sd   )
+                   + k2 * norm.pdf( (val+0.5-mu*2)/(sd*2)))
         errs[val] = e
     return errs
 
