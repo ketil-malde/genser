@@ -40,7 +40,7 @@ def expmax(distr, hist):
     mu0, sd0 = estimate(h0)
     mu1, sd1 = estimate(h1)
     mu2, sd2 = estimate(h2)
-    print('  est:', (mu0,sd0), (mu1,sd1), (mu2,sd2))
+    # print('  est:', (mu0,sd0), (mu1,sd1), (mu2,sd2))
     # weight estimate
     n0, n1, n2 = sum(h0.values()), sum(h1.values()), sum(h2.values())
     return ((mu0*2*n0 + mu1*n1 + mu2/2*n2)/(n0+n1+n2), (sd0*2*n0 + sd1*n1 + sd2*n2/2)/(n0+n1+n2), n0, n1, n2)
@@ -49,7 +49,7 @@ def expmax(distr, hist):
 def same(d0, d1):
     mu0, sd0, _, _, _ = d0
     mu1, sd1, _, _, _ = d1
-    return(abs(mu0-mu1) < 0.005 and abs(sd1-sd0) < 0.005)
+    return(abs(mu0-mu1) < 0.05 and abs(sd1-sd0) < 0.05)
 
 def errors(dist, hist):
     errs = {}
