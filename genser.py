@@ -12,7 +12,8 @@ def estimate(hist):
         n += freq
         s += cov * freq
         ss += cov * cov * freq
-
+    if n<1:
+        raise()
     mu = s/n
     var = ss/n-mu*mu
     return mu, sqrt(var)
@@ -23,41 +24,46 @@ from scipy.stats import norm
 def expmax(distr, hist):
     h0 = {}
     h1 = {}
-    h2 = {}    
-    mu, sd, k0, k1, k2 = distr
-    sd1, sd2, sd3 = sqrt(mu/2), sqrt(mu), sqrt(mu*2)
+    h2 = {}
+    h3 = {}
+    mu, sd, k0, k1, k2, k3 = distr
+    sd0, sd1, sd2, sd3 = sqrt(mu/2), sqrt(mu), sqrt(mu*2), sqrt(mu*3)
     # assign histogram to distrib
     for val,cnt in hist.items():
         pz = 0.0001  # uniform
-        p0 = norm.pdf((val+0.5-mu/2)/sd1)  # prob of val under N(mu/2, sd/2)
-        p1 = norm.pdf((val+0.5-mu  )/sd2)
-        p2 = norm.pdf((val+0.5-mu*2)/sd3)
-        ptot = p0 + p1 + p2 + pz
+        p0 = k0 * norm.pdf((val+0.5-mu/2)/sd0)  # prob of val under N(mu/2, sd/2)
+        p1 = k1 * norm.pdf((val+0.5-mu  )/sd1)
+        p2 = k2 * norm.pdf((val+0.5-mu*2)/sd2)
+        p3 = k3 * norm.pdf((val+0.5-mu*3)/sd3)
+        ptot = p0 + p1 + p2 + p3 + pz
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot
         h2[val] = cnt*p2/ptot
+        h3[val] = cnt*p3/ptot
     # estimate the parameters
     mu0, sd0 = estimate(h0)
     mu1, sd1 = estimate(h1)
     mu2, sd2 = estimate(h2)
-    # print('  est:', (mu0,sd0), (mu1,sd1), (mu2,sd2))
+    mu3, sd3 = estimate(h3)
+    print('  est:', (mu0,sd0), (mu1,sd1), (mu2,sd2), (mu3,sd3))
     # weight estimate
-    n0, n1, n2 = sum(h0.values()), sum(h1.values()), sum(h2.values())
-    return ((mu0*2*n0 + mu1*n1 + mu2/2*n2)/(n0+n1+n2), (sd0*2*n0 + sd1*n1 + sd2*n2/2)/(n0+n1+n2), n0, n1, n2)
+    n0, n1, n2, n3 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values())
+    return ((mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3) , (sd0*2*n0 + sd1*n1 + sd2*n2/2 + sd3*n3/3)/(n0+n1+n2+n3), n0, n1, n2, n3)
 
 # criterion for end of convergence
 def same(d0, d1):
-    mu0, sd0, _, _, _ = d0
-    mu1, sd1, _, _, _ = d1
+    mu0, sd0, _, _, _, _ = d0
+    mu1, sd1, _, _, _, _ = d1
     return(abs(mu0-mu1) < 0.05 and abs(sd1-sd0) < 0.05)
 
 def errors(dist, hist):
     errs = {}
-    mu, sd, k0, k1, k2 = dist
+    mu, sd, k0, k1, k2, k3 = dist
     for val, cnt in hist.items():
         e = cnt - (  k0 * norm.pdf( (val+0.5-mu/2)/(sd/2))
                    + k1 * norm.pdf( (val+0.5-mu)  / sd   )
-                   + k2 * norm.pdf( (val+0.5-mu*2)/(sd*2)))
+                   + k2 * norm.pdf( (val+0.5-mu*2)/(sd*2))
+                   + k3 * norm.pdf( (val+0.5-mu*3)/(sd*3)))
         errs[val] = e
     return errs
 
