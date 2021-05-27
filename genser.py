@@ -25,12 +25,13 @@ def expmax(distr, hist):
     h1 = {}
     h2 = {}    
     mu, sd, k0, k1, k2 = distr
+    sd1, sd2, sd3 = sqrt(mu/2), sqrt(mu), sqrt(mu*2)
     # assign histogram to distrib
     for val,cnt in hist.items():
         pz = 0.0001  # uniform
-        p0 = norm.pdf((val+0.5-mu/2)/(sd/2))  # prob of val under N(mu/2, sd/2)
-        p1 = norm.pdf((val+0.5-mu)/sd)
-        p2 = norm.pdf((val+0.5-mu*2)/(sd))
+        p0 = norm.pdf((val+0.5-mu/2)/sd1)  # prob of val under N(mu/2, sd/2)
+        p1 = norm.pdf((val+0.5-mu  )/sd2)
+        p2 = norm.pdf((val+0.5-mu*2)/sd3)
         ptot = p0 + p1 + p2 + pz
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot
@@ -48,7 +49,7 @@ def expmax(distr, hist):
 def same(d0, d1):
     mu0, sd0, _, _, _ = d0
     mu1, sd1, _, _, _ = d1
-    return(abs(mu0-mu1) < 0.001 and abs(sd1-sd0) < 0.001)
+    return(abs(mu0-mu1) < 0.005 and abs(sd1-sd0) < 0.005)
 
 def errors(dist, hist):
     errs = {}
