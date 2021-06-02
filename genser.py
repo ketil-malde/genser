@@ -51,9 +51,9 @@ def expmax(distr, hist):
     mu4, sd4 = estimate(h4)
     # weight estimate
     n0, n1, n2, n3, n4 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()), sum(h4.values())
-    new_mu = mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
+    new_mu = (mu0*2*n0 + mu1*n1 + mu2/2*n2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
     print(f'estimated mus    {mu0:.1f} {mu1:.1f} {mu2:.1f} {mu3:.1f} {mu4:.1f}; estimated sigmas {sd0:.1f} {sd1:.1f} {sd2:.1f} {sd3:.1f} {sd4:.1f}\r', end='')
-    if POISSON:
+    if POISSON: # note, we should use real poisson here, not normal approx (too low k)
         sd0 = sqrt(mu0)
         sd1 = sqrt(mu1)
         sd2 = sqrt(mu2)
