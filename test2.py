@@ -99,10 +99,14 @@ def res_plot():
     h0 = [k0*poisson.pmf(int(mu/2), x) for x in xs]
     h1 = [k1*poisson.pmf(int(mu),   x) for x in xs]
     h2 = [k2*poisson.pmf(int(mu*2), x) for x in xs]
-    plt.plot(xs, ys)
+    res = []
+    for x in range(limit):
+        res.append(ys[x]-h0[x]-h1[x]-h2[x])
+    plt.plot(xs, ys, label='Coverage', linewidth=2)
     plt.plot(xs, h0)
     plt.plot(xs, h1)
-    plt.plot(xs, h2)    
+    plt.plot(xs, h2)
+    plt.plot(xs, res, ':', linewidth=2, label='Residuals')    
     plt.grid(True)
 
     plt.show()    
