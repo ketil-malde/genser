@@ -67,7 +67,7 @@ print('\n\nFinal:\n')
 mu, sd0, sd1, sd2, sd3, sd4, k0, k1, k2, k3, k4 = dist2
 
 print(f'mus    {mu/2:3.1f} {mu:3.1f} {mu*2:3.1f} {mu*3:3.1f} {mu*4:.1f}')
-print(f'sigmas {sd0:3.1f} {sd1:3.1f} {sd2:3.1f} {sd3:3.1f} {sd4:3.1f}')
+print(f'var    {sd0**2:3.1f} {sd1**2:3.1f} {sd2**2:3.1f} {sd3**2:3.1f} {sd4**2:3.1f}')
 print(f'counts {int(k0):10} {int(k1):10} {int(k2):10} {int(k3):10} {int(k4):10}')
 print('')
 
