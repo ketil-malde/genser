@@ -18,11 +18,9 @@ def estimate(hist):
     var = ss/n-mu*mu
     return mu, sqrt(var)
 
-from scipy.stats import norm
+from scipy.stats import poisson
 
-# assign a histogram to three distrs and re-estimate parameters
-POISSON = False
-def expmax(distr, hist):
+def splithist(distr, hist):
     h0 = {}
     h1 = {}
     h2 = {}
@@ -30,19 +28,24 @@ def expmax(distr, hist):
     h4 = {}
     mu, sd0, sd1, sd2, sd3, sd4, k0, k1, k2, k3, k4 = distr
     # assign histogram to distrib
-    pz = (k0+k1+k2+k3+k4)/1000
+    pz = (k0+k1+k2+k3+k4)/5000
     for val,cnt in hist.items():
-        p0 = k0/sd0 * norm.pdf((val+0.5-mu/2)/sd0)  # prob of val under N(mu/2, sd/2)
-        p1 = k1/sd1 * norm.pdf((val+0.5-mu  )/sd1)
-        p2 = k2/sd2 * norm.pdf((val+0.5-mu*2)/sd2)
-        p3 = k3/sd3 * norm.pdf((val+0.5-mu*3)/sd3)
-        p4 = k4/sd4 * norm.pdf((val+0.5-mu*4)/sd4)
+        p0 = k0 * poisson.pmf(int(mu/2), val)  # prob of val under N(mu/2, sd/2)
+        p1 = k1 * poisson.pmf(int(mu),   val)
+        p2 = k2 * poisson.pmf(int(mu*2), val)
+        p3 = k3 * poisson.pmf(int(mu*3), val)
+        p4 = k4 * poisson.pmf(int(mu*4), val)
         ptot = p0 + p1 + p2 + p3 + p4 + pz
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot
         h2[val] = cnt*p2/ptot
         h3[val] = cnt*p3/ptot
         h4[val] = cnt*p4/ptot
+    return h0, h1, h2, h3, h4
+
+# assign a histogram to three distrs and re-estimate parameters
+def expmax(distr, hist):
+    h0, h1, h2, h3, h4 = splithist(distr, hist)
     # re-estimate the parameters
     mu0, sd0 = estimate(h0)
     mu1, sd1 = estimate(h1)
@@ -51,15 +54,8 @@ def expmax(distr, hist):
     mu4, sd4 = estimate(h4)
     # weight estimate
     n0, n1, n2, n3, n4 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()), sum(h4.values())
-    new_mu = (mu0*2*n0 + mu1*n1 + mu2/2*n2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
-    print(f'estimated mus    {mu0:.1f} {mu1:.1f} {mu2:.1f} {mu3:.1f} {mu4:.1f}; estimated sigmas {sd0:.1f} {sd1:.1f} {sd2:.1f} {sd3:.1f} {sd4:.1f}\r', end='')
-    if POISSON: # note, we should use real poisson here, not normal approx (too low k)
-        sd0 = sqrt(mu0)
-        sd1 = sqrt(mu1)
-        sd2 = sqrt(mu2)
-        sd3 = sqrt(mu3)
-        sd4 = sqrt(mu4)
-        print(f'poisson sigmas {sd0:.1f} {sd1:.1f} {sd2:.1f} {sd3:.1f} {sd4:.1f}')
+    new_mu = (n0*mu0*2 + n1*mu1 + n2*mu2/2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
+    print(f'estimated distrs:  {mu0:.1f}±{sd0:.1f} {mu1:.1f}±{sd1:.1f} {mu2:.1f}±{sd2:.1f} {mu3:.1f}±{sd3:.1f} {mu4:.1f}±{sd4:.1f} \r', end='')
     return (new_mu , sd0, sd1, sd2, sd3, sd4, n0, n1, n2, n3, n4)
 
 # criterion for end of convergence
@@ -69,11 +65,12 @@ def same(d0, d1):
     return(abs(mu0-mu1) < 0.1 and abs(sd1-sd0) < 0.1)
 
 def errors(dist, hist):
+    raise("don't use: it's poisson now")
     errs = {}
     mu, sd0, sd1, sd2, sd3, sd4, k0, k1, k2, k3, k4 = dist
     pz = (k0+k1+k2+k3+k4)/1000
     for val, cnt in hist.items():
-        e = cnt - (  k0/sd0 * norm.pdf( (val+0.5-mu/2)/sd0)
+        e = cnt - (  k0/sd0 * norm.pmf( (val+0.5-mu/2)/sd0)
                    + k1/sd1 * norm.pdf( (val+0.5-mu)  /sd1)
                    + k2/sd2 * norm.pdf( (val+0.5-mu*2)/sd2)
                    + k3/sd3 * norm.pdf( (val+0.5-mu*3)/sd3)
@@ -81,6 +78,22 @@ def errors(dist, hist):
                    + pz)
         errs[val] = e
     return errs
+
+def integr(hist):
+    total = 0
+    for val, count in hist.items():
+        total = total + val*count
+    return total
+
+def integrate(distr, hist):
+    h0, h1, _, _, _ = splithist(distr, hist)
+    hs = {}
+    for val, cnt in hist.items():
+        hs[val] = cnt - h0[val] - h1[val]
+    haploid = integr(h0)
+    diploid = integr(h1)
+    repeats = integr(hs)
+    return haploid, diploid, repeats # NB! raw counts, divide by mu
 
 # iterate until convergence
 # d0 = None
