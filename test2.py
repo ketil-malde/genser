@@ -87,7 +87,28 @@ def err_dist():
         bar = '-'*(int(10*err/hist[k]))
     print(f'{k:03} {int(hist[k]):10} pred: {int(e0):10} {int(e1):10} {int(e2):10} {int(e3):10} {int(e4):10} err: {err:10}  {bar}')
 
-err_dist()
+import matplotlib.pyplot as plt
+
+def res_plot():
+    limit = int(mu*4)
+    plt.xlabel('Coverage')
+    plt.ylabel('Count')
+    #plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
+    xs = list(hist.keys())[:limit]
+    ys = list(hist.values())[:limit]
+    h0 = [k0*poisson.pmf(int(mu/2), x) for x in xs]
+    h1 = [k1*poisson.pmf(int(mu),   x) for x in xs]
+    h2 = [k2*poisson.pmf(int(mu*2), x) for x in xs]
+    plt.plot(xs, ys)
+    plt.plot(xs, h0)
+    plt.plot(xs, h1)
+    plt.plot(xs, h2)    
+    plt.grid(True)
+
+    plt.show()    
+
+res_plot()
+# err_dist()
     
 hap, dip, rest = G.integrate(dist2, hist)
 print()
