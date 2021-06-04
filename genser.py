@@ -16,7 +16,7 @@ def estimate(hist):
         raise()
     mu = s/n
     var = ss/n-mu*mu
-    return mu, sqrt(var)
+    return mu, var
 
 from scipy.stats import poisson
 
@@ -47,22 +47,22 @@ def splithist(distr, hist):
 def expmax(distr, hist):
     h0, h1, h2, h3, h4 = splithist(distr, hist)
     # re-estimate the parameters
-    mu0, sd0 = estimate(h0)
-    mu1, sd1 = estimate(h1)
-    mu2, sd2 = estimate(h2)
-    mu3, sd3 = estimate(h3)
-    mu4, sd4 = estimate(h4)
+    mu0, var0 = estimate(h0)
+    mu1, var1 = estimate(h1)
+    mu2, var2 = estimate(h2)
+    mu3, var3 = estimate(h3)
+    mu4, var4 = estimate(h4)
     # weight estimate
     n0, n1, n2, n3, n4 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()), sum(h4.values())
     new_mu = (n0*mu0*2 + n1*mu1 + n2*mu2/2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
-    print(f'estimated distrs:  {mu0:.1f}±{sd0:.1f} {mu1:.1f}±{sd1:.1f} {mu2:.1f}±{sd2:.1f} {mu3:.1f}±{sd3:.1f} {mu4:.1f}±{sd4:.1f} \r', end='')
-    return (new_mu , sd0, sd1, sd2, sd3, sd4, n0, n1, n2, n3, n4)
+    print(f'estimated distrs:  {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f} \r', end='')
+    return (new_mu, var0, var1, var2, var3, var4, n0, n1, n2, n3, n4)
 
 # criterion for end of convergence
 def same(d0, d1):
     mu0, sd0, _, _, _, _, _, _, _, _, _ = d0
     mu1, sd1, _, _, _, _, _, _, _, _, _ = d1
-    return(abs(mu0-mu1) < 0.1 and abs(sd1-sd0) < 0.1)
+    return(abs(mu0-mu1) < 0.1 and abs(sqrt(sd1)-sqrt(sd0)) < 0.1)
 
 def errors(dist, hist):
     raise("don't use: it's poisson now")

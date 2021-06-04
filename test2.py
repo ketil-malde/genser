@@ -38,8 +38,8 @@ hist.pop(0, None)  # delete zero counts (often inflated)
 
 # estimate and compare        
 
-mu_, sd_ = G.estimate(hist)
-dist = mu_, sd_, sd_, sd_, sd_, sd_, 1000.0, 2000.0, 1000.0, 1000.0, 1000.0
+mu_, var_ = G.estimate(hist)
+dist = mu_, var_, var_, var_, var_, var_, 1000.0, 2000.0, 1000.0, 1000.0, 1000.0
 
 def get_modal():
     cur_cnt = 0
@@ -51,7 +51,7 @@ def get_modal():
 
 m = get_modal()
 g = G.integr(hist)/mu_/1e6
-print(f'Initial 1C estimates (using mu={mu_:.1f}, sd={sd_:.1f}): {g:.1f} Mbp; (using mode={m}): {g:.1f} Mbp')
+print(f'Initial 1C estimates (using mu={mu_:.1f}, var={var_:.1f}): {g:.1f} Mbp; (using mode={m}): {g:.1f} Mbp')
 
 dist2 = G.expmax(dist, hist)
 # print('**',dist2)
@@ -65,10 +65,10 @@ while(not G.same(dist,dist2)):
 #     print('  dist errs:', G.estimate(es))
 
 print('\n\nFinal:\n')
-mu, sd0, sd1, sd2, sd3, sd4, k0, k1, k2, k3, k4 = dist2
+mu, var0, var1, var2, var3, var4, k0, k1, k2, k3, k4 = dist2
 
 print(f'mus    {mu/2:3.1f} {mu:3.1f} {mu*2:3.1f} {mu*3:3.1f} {mu*4:.1f}')
-print(f'var    {sd0**2:3.1f} {sd1**2:3.1f} {sd2**2:3.1f} {sd3**2:3.1f} {sd4**2:3.1f}')
+print(f'var    {var0:3.1f} {var1:3.1f} {var2:3.1f} {var3:3.1f} {var4:3.1f}')
 print(f'counts {int(k0):10} {int(k1):10} {int(k2):10} {int(k3):10} {int(k4):10}')
 print('')
 
