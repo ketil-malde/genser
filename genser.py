@@ -30,11 +30,11 @@ def splithist(distr, hist):
     # assign histogram to distrib
     pz = (k0+k1+k2+k3+k4)/5000
     for val,cnt in hist.items():
-        p0 = k0 * poisson.pmf(int(mu/2), val)  # prob of val under N(mu/2, sd/2)
-        p1 = k1 * poisson.pmf(int(mu),   val)
-        p2 = k2 * poisson.pmf(int(mu*2), val)
-        p3 = k3 * poisson.pmf(int(mu*3), val)
-        p4 = k4 * poisson.pmf(int(mu*4), val)
+        p0 = k0 * poisson.pmf(val, int(mu/2))  # prob of val under N(mu/2, sd/2)
+        p1 = k1 * poisson.pmf(val, int(mu))
+        p2 = k2 * poisson.pmf(val, int(mu*2))
+        p3 = k3 * poisson.pmf(val, int(mu*3))
+        p4 = k4 * poisson.pmf(val, int(mu*4))
         ptot = p0 + p1 + p2 + p3 + p4 + pz
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot

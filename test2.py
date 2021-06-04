@@ -75,11 +75,11 @@ from scipy.stats import poisson
 
 def err_dist():
   for k in range(1,int(2*mu)):
-    e0 = k0 * poisson.pmf(int(mu/2), k)  # prob of val under N(mu/2, sd/2)
-    e1 = k1 * poisson.pmf(int(mu),   k)
-    e2 = k2 * poisson.pmf(int(mu*2), k)
-    e3 = k3 * poisson.pmf(int(mu*3), k)
-    e4 = k4 * poisson.pmf(int(mu*4), k)
+    e0 = k0 * poisson.pmf(k, int(mu/2))  # prob of val under N(mu/2, sd/2)
+    e1 = k1 * poisson.pmf(k, int(mu))
+    e2 = k2 * poisson.pmf(k, int(mu*2))
+    e3 = k3 * poisson.pmf(k, int(mu*3))
+    e4 = k4 * poisson.pmf(k, int(mu*4))
     err = int(hist[k]-(e0+e1+e2+e3+e4))
     if err < 0:
         bar = '*'*(int(10*(-err)/hist[k]))
@@ -96,9 +96,9 @@ def res_plot():
     #plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
     xs = list(hist.keys())[:limit]
     ys = list(hist.values())[:limit]
-    h0 = [k0*poisson.pmf(int(mu/2), x) for x in xs]
-    h1 = [k1*poisson.pmf(int(mu),   x) for x in xs]
-    h2 = [k2*poisson.pmf(int(mu*2), x) for x in xs]
+    h0 = [k0*poisson.pmf(x, int(mu/2)) for x in xs]
+    h1 = [k1*poisson.pmf(x, int(mu))   for x in xs]
+    h2 = [k2*poisson.pmf(x, int(mu*2)) for x in xs]
     res = []
     for x in range(limit):
         res.append(ys[x]-h0[x]-h1[x]-h2[x])
