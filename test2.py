@@ -50,7 +50,8 @@ def get_modal():
             return val
 
 m = get_modal()
-print(f'Initial 1C estimates (using mu={mu_:1f}): {G.integr(hist)/mu_/1e6} Mbp; (using mode={m}): {G.integr(hist)/m/1e6:.6f} Mbp')
+g = G.integr(hist)/mu_/1e6
+print(f'Initial 1C estimates (using mu={mu_:.1f}, sd={sd_:.1f}): {g:.1f} Mbp; (using mode={m}): {g:.1f} Mbp')
 
 dist2 = G.expmax(dist, hist)
 # print('**',dist2)
