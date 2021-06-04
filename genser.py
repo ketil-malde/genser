@@ -26,7 +26,7 @@ def splithist(distr, hist):
     h2 = {}
     h3 = {}
     h4 = {}
-    mu, sd0, sd1, sd2, sd3, sd4, k0, k1, k2, k3, k4 = distr
+    mu, k0, k1, k2, k3, k4 = distr
     # assign histogram to distrib
     pz = (k0+k1+k2+k3+k4)/5000
     for val,cnt in hist.items():
@@ -56,28 +56,13 @@ def expmax(distr, hist):
     n0, n1, n2, n3, n4 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()), sum(h4.values())
     new_mu = (n0*mu0*2 + n1*mu1 + n2*mu2/2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
     print(f'estimated distrs:  {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f} \r', end='')
-    return (new_mu, var0, var1, var2, var3, var4, n0, n1, n2, n3, n4)
+    return (new_mu, n0, n1, n2, n3, n4)
 
 # criterion for end of convergence
 def same(d0, d1):
-    mu0, sd0, _, _, _, _, _, _, _, _, _ = d0
-    mu1, sd1, _, _, _, _, _, _, _, _, _ = d1
-    return(abs(mu0-mu1) < 0.1 and abs(sqrt(sd1)-sqrt(sd0)) < 0.1)
-
-def errors(dist, hist):
-    raise("don't use: it's poisson now")
-    errs = {}
-    mu, sd0, sd1, sd2, sd3, sd4, k0, k1, k2, k3, k4 = dist
-    pz = (k0+k1+k2+k3+k4)/1000
-    for val, cnt in hist.items():
-        e = cnt - (  k0/sd0 * norm.pmf( (val+0.5-mu/2)/sd0)
-                   + k1/sd1 * norm.pdf( (val+0.5-mu)  /sd1)
-                   + k2/sd2 * norm.pdf( (val+0.5-mu*2)/sd2)
-                   + k3/sd3 * norm.pdf( (val+0.5-mu*3)/sd3)
-                   + k4/sd4 * norm.pdf( (val+0.5-mu*4)/sd4)
-                   + pz)
-        errs[val] = e
-    return errs
+    mu0, _, _, _, _, _ = d0
+    mu1, _, _, _, _, _ = d1
+    return(abs(mu0-mu1) < 0.001)
 
 def integr(hist):
     total = 0
