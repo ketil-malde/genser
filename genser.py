@@ -18,7 +18,7 @@ def estimate(hist):
     var = ss/n-mu*mu
     return mu, var
 
-from scipy.stats import poisson
+from scipy.stats import nbinom
 
 def splithist(distr, hist):
     h0 = {}
@@ -26,22 +26,31 @@ def splithist(distr, hist):
     h2 = {}
     h3 = {}
     h4 = {}
-    mu, k0, k1, k2, k3, k4 = distr
+    r, p, k0, k1, k2, k3, k4 = distr
     # assign histogram to distrib
     pz = (k0+k1+k2+k3+k4)/5000
     for val,cnt in hist.items():
-        p0 = k0 * poisson.pmf(int(mu/2), val)  # prob of val under N(mu/2, sd/2)
-        p1 = k1 * poisson.pmf(int(mu),   val)
-        p2 = k2 * poisson.pmf(int(mu*2), val)
-        p3 = k3 * poisson.pmf(int(mu*3), val)
-        p4 = k4 * poisson.pmf(int(mu*4), val)
+        p0 = k0 * nbinom.pmf(val, r/2, 1-p)
+        p1 = k1 * nbinom.pmf(val, r,   1-p)
+        p2 = k2 * nbinom.pmf(val, r*2, 1-p)
+        p3 = k3 * nbinom.pmf(val, r*3, 1-p)
+        p4 = k4 * nbinom.pmf(val, r*4, 1-p)
+        if val==20:
+            print('## r,p:', r, p, "ps:", p0, p1, p2, p3, p4)
         ptot = p0 + p1 + p2 + p3 + p4 + pz
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot
         h2[val] = cnt*p2/ptot
         h3[val] = cnt*p3/ptot
         h4[val] = cnt*p4/ptot
+    print('*** dicts hX:', sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()))
     return h0, h1, h2, h3, h4
+
+def nbin_parms(mu, var):
+    r = mu*mu/(var-mu)  # n is the number of successes (python)! r is failures (wikipedia)
+    p = (var-mu)/var    # prob of any trial is a success
+    print('*** mu and var:', mu, var, 'r and p:', r, p, 'reversed mu and var:', r*p/(1-p), r*p/(1-p)**2)
+    return (r, p)
 
 # assign a histogram to three distrs and re-estimate parameters
 def expmax(distr, hist):
@@ -54,15 +63,17 @@ def expmax(distr, hist):
     mu4, var4 = estimate(h4)
     # weight estimate
     n0, n1, n2, n3, n4 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()), sum(h4.values())
-    new_mu = (n0*mu0*2 + n1*mu1 + n2*mu2/2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
-    print(f'estimated distrs:  {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f} \r', end='')
-    return (new_mu, n0, n1, n2, n3, n4)
+    mu = mu1 # (n0*mu0*2+n1*mu1+n2*mu2/2)/(n0+n1+n2)
+    var = var1
+    new_r, new_p = nbin_parms(mu, var)
+    print(f'estimated distrs:  {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f}') # \r', end='')
+    return (new_r, new_p, n0, n1, n2, n3, n4)
 
 # criterion for end of convergence
 def same(d0, d1):
-    mu0, _, _, _, _, _ = d0
-    mu1, _, _, _, _, _ = d1
-    return(abs(mu0-mu1) < 0.001)
+    r0, p0, _, _, _, _, _ = d0
+    r1, p1, _, _, _, _, _ = d1
+    return(abs(r0-r1) < 0.1 and abs(p0-p1) < 0.01)
 
 def integr(hist):
     total = 0
