@@ -88,6 +88,30 @@ def integrate(distr, hist):
     diploid = integr(h1)
     repeats = integr(hs)
     return haploid, diploid, repeats # NB! raw counts, divide by mu
+import matplotlib.pyplot as plt
+
+def res_plot(hist, distr):
+    r, p, k0, k1, k2, _k3, _k4 = distr
+    limit = 100 # int(mu*4)
+    plt.xlabel('Coverage')
+    plt.ylabel('Count')
+    #plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu=100,\ \sigma=15$')
+    xs = list(hist.keys())[:limit]
+    ys = list(hist.values())[:limit]
+    h0 = [k0*nbinom.pmf(x, r/2, 1-p) for x in xs]
+    h1 = [k1*nbinom.pmf(x, r,   1-p) for x in xs]
+    h2 = [k2*nbinom.pmf(x, r*2, 1-p) for x in xs]
+    res = []
+    for x in range(limit):
+        res.append(ys[x]-h0[x]-h1[x]-h2[x])
+    plt.plot(xs, ys, label='Coverage', linewidth=2)
+    plt.plot(xs, h0)
+    plt.plot(xs, h1)
+    plt.plot(xs, h2)
+    plt.plot(xs, res, ':', linewidth=2, label='Residuals')    
+    plt.grid(True)
+
+    plt.show()    
 
 # iterate until convergence
 # d0 = None
