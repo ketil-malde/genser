@@ -116,6 +116,7 @@ res_plot()
 # err_dist()
     
 hap, dip, rest = G.integrate(dist2, hist)
+mu = r*p/(1-p)
 print()
 print(f'Estimated total sequence, {(hap*2+dip+rest)/mu/1e6:f} Mbp,\n      haploid {hap*2/mu/1e6:f} diploid: {(dip+rest)/mu/1e6:f} (repeats: {rest/mu/1e6:f})')
 print(f'Estimated total DNA (1C): {(hap+dip+rest)/mu/1e6:f} Mbp')

@@ -35,8 +35,6 @@ def splithist(distr, hist):
         p2 = k2 * nbinom.pmf(val, r*2, 1-p)
         p3 = k3 * nbinom.pmf(val, r*3, 1-p)
         p4 = k4 * nbinom.pmf(val, r*4, 1-p)
-        if val==20:
-            print('## r,p:', r, p, "ps:", p0, p1, p2, p3, p4)
         ptot = p0 + p1 + p2 + p3 + p4 + pz
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot
@@ -49,7 +47,7 @@ def splithist(distr, hist):
 def nbin_parms(mu, var):
     r = mu*mu/(var-mu)  # n is the number of successes (python)! r is failures (wikipedia)
     p = (var-mu)/var    # prob of any trial is a success
-    print('*** mu and var:', mu, var, 'r and p:', r, p, 'reversed mu and var:', r*p/(1-p), r*p/(1-p)**2)
+    print(f'*** mu and var: {mu:.1f} {var:.1f}, r and p: {r:.2f}, {p:.2f}, reversed mu and var: {r*p/(1-p):.1f}, {r*p/(1-p)**2:.1f}')
     return (r, p)
 
 # assign a histogram to three distrs and re-estimate parameters
