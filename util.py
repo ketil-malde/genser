@@ -12,11 +12,12 @@ def estimate(hist):
         n += freq
         s += cov * freq
         ss += cov * cov * freq
-    if n<1:
-        raise()
-    mu = s/n
-    var = ss/n-mu*mu
-    return mu, var
+    if n>=1:
+        mu = s/n
+        var = ss/n-mu*mu
+        return mu, var
+    else:
+        return None
 
 from scipy.stats import nbinom, poisson
 
@@ -29,7 +30,7 @@ def splithist(distr, hist):
     h4 = {}
     mux, r, p, kx, k0, k1, k2, k3, k4 = distr
     # assign histogram to distrib
-    pz = (kx+k0+k1+k2+k3+k4)/5000
+    pz = (kx+k0+k1+k2+k3+k4)/10000
     for val,cnt in hist.items():
         px = kx * poisson.pmf(val, mux)
         p0 = k0 * nbinom.pmf(val, r/2, 1-p)
@@ -38,6 +39,8 @@ def splithist(distr, hist):
         p3 = k3 * nbinom.pmf(val, r*3, 1-p)
         p4 = k4 * nbinom.pmf(val, r*4, 1-p)
         ptot = px + p0 + p1 + p2 + p3 + p4 + pz
+        if ptot == pz:
+            break
         hx[val] = cnt*px/ptot
         h0[val] = cnt*p0/ptot
         h1[val] = cnt*p1/ptot
@@ -54,7 +57,7 @@ def nbin_parms(mu, var):
     return (r, p)
 
 # assign a histogram to three distrs and re-estimate parameters
-def expmax(distr, hist):
+def expmax(distr, hist, verbose=False):
     hx, h0, h1, h2, h3, h4 = splithist(distr, hist)
     # re-estimate the parameters
     mux, varx = estimate(hx)
@@ -69,7 +72,8 @@ def expmax(distr, hist):
     var = var1
     new_r, new_p = nbin_parms(mu, var)
     new_dist = ((mux+varx)/2, new_r, new_p, nx, n0, n1, n2, n3, n4)
-    print(f'estimated distrs:  {mux:.1f}±{varx:.1f} {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f}\r', end='')
+    if verbose:
+        print(f'  estimating distributions:  {mux:.1f}±{varx:.1f} {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f}\r', end='')
     return new_dist
 
 # criterion for end of convergence
@@ -88,11 +92,13 @@ def integrate(distr, hist):
     hx, h0, h1, _, _, _ = splithist(distr, hist)
     hs = {}
     for val, cnt in hist.items():
-        hs[val] = cnt - h0[val] - h1[val]
+        hs[val] = cnt - hx.get(val,0) - h0.get(val,0) - h1.get(val,0)
+    lowcov  = integr(hx)
     haploid = integr(h0)
     diploid = integr(h1)
     repeats = integr(hs)
-    return haploid, diploid, repeats # NB! raw counts, divide by mu
+    return lowcov, haploid, diploid, repeats # NB! raw counts, divide by mu
+
 import matplotlib.pyplot as plt
 
 def res_plot(hist, distr):
@@ -110,7 +116,7 @@ def res_plot(hist, distr):
     res = []
     for x in range(limit):
         res.append(ys[x]-hx[x]-h0[x]-h1[x]-h2[x])
-    plt.plot(xs, ys, label='Coverage', linewidth=2)
+    plt.plot(xs, ys, '--', label='Coverage', linewidth=2)
     plt.plot(xs, hx)
     plt.plot(xs, h0)
     plt.plot(xs, h1)
@@ -134,16 +140,3 @@ def err_dist():
     else:
         bar = '-'*(int(10*err/hist[k]))
     print(f'{k:03} {int(hist[k]):10} pred: {int(e0):10} {int(e1):10} {int(e2):10} {int(e3):10} {int(e4):10} err: {err:10}  {bar}')
-
-    
-# iterate until convergence
-# d0 = None
-# while True:
-#     d1 = expmax(d0, hist)
-#    if same(d0,d1):
-#        break
-#    d0 = d1
-
-# todo: write a test
-#  - generate random data
-#  - check that we can recover it
