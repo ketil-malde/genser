@@ -17,11 +17,11 @@ def estimate(hist):
         var = ss/n-mu*mu
         return mu, var
     else:
-        return None
+        return 0, 0
 
 from scipy.stats import nbinom, poisson
 
-def splithist(distr, hist):
+def splithist(distr, hist, verbose=False):
     hx = {}
     h0 = {}
     h1 = {}
@@ -47,18 +47,23 @@ def splithist(distr, hist):
         h2[val] = cnt*p2/ptot
         h3[val] = cnt*p3/ptot
         h4[val] = cnt*p4/ptot
-    # print('*** dicts hX:', sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()))
+#    if verbose:
+#        print('*** dicts hX:', sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()))
     return hx, h0, h1, h2, h3, h4
 
 def nbin_parms(mu, var):
-    r = mu*mu/(var-mu)  # n is the number of successes (python)! r is failures (wikipedia)
-    p = (var-mu)/var    # prob of any trial is a success
-    # print(f'*** mu and var: {mu:.1f} {var:.1f}, r and p: {r:.2f}, {p:.2f}, reversed mu and var: {r*p/(1-p):.1f}, {r*p/(1-p)**2:.1f}')
+    if var>mu*1.05:
+        r = mu*mu/(var-mu)  # n is the number of successes (python)! r is failures (wikipedia)
+        p = (var-mu)/var    # prob of any trial is a success
+#        print(f'*** mu and var: {mu:.1f} {var:.1f}, r and p: {r:.2f}, {p:.2f}')
+    else:
+        r = mu*mu/(0.05*var)
+        p = 0.05
     return (r, p)
 
 # assign a histogram to three distrs and re-estimate parameters
 def expmax(distr, hist, verbose=False):
-    hx, h0, h1, h2, h3, h4 = splithist(distr, hist)
+    hx, h0, h1, h2, h3, h4 = splithist(distr, hist, verbose)
     # re-estimate the parameters
     mux, varx = estimate(hx)
     mu0, var0 = estimate(h0)
