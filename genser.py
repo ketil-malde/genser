@@ -105,6 +105,6 @@ if args.plot:
 low, hap, dip, rest = G.integrate(dist2, full_hist)
 mu = r*p/(1-p)
 print(f'Estimated total sequence, {(hap*2+dip+rest)/mu/1e6:f} Mbp,\n      haploid {hap*2/mu/1e6:f} diploid: {(dip+rest)/mu/1e6:f} (repeats: {rest/mu/1e6:f})')
-print(f'Zero-coverage: {zs/1e6:.3f} Mbp, low coverage {low/1e6:.3f} Mbp')
+print(f'Zero-coverage: {zs/1e6:.3f} M loci, low coverage {low/1e6:.3f} M loci')
 print(f'Estimated total DNA (1C): {(hap+dip+rest)/mu/1e6:f} Mbp')
 
