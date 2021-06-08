@@ -1,93 +1,110 @@
+#!/usr/bin/python3
+# Literature to consider:
+#   https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-14-128 Poisson hierchical model
+# 
+
+# Parse args:
+# -b bamfile, -t table
+# -p --plot, -v --verbose
+
+import argparse
+
+p = argparse.ArgumentParser(description='Estimate genome size from coverage statistics.')
+p.add_argument('-b', '--bamfile', action='store_true', help='Read coverage directly from BAM file')
+p.add_argument('-p', '--plot', action='store_true', help='Generate coverage plot')
+p.add_argument('-v', '--verbose', action='store_true', help='Show progress information')
+p.add_argument('FILE', nargs='?', help='input file in tabular format (unless -b)')
+args = p.parse_args()
+
+# main program
+
+from random import randrange, gauss
 from math import sqrt
 
-# mu is expected coverage for diploid, k0, k1, k2 is proportion (multipliers)
-# for distributions around mu/2, mu, and 2*mu
-# distr = None # (mu, k0, k1, k2)
+import util as G
+import sys
+import os
+import subprocess
 
-# estimate a normal distribution for a histogram
-def estimate(hist):
-    n = s = ss = 0
-    ls = sorted(hist.items())
-    for cov, freq in ls[1:]:
-        n += freq
-        s += cov * freq
-        ss += cov * cov * freq
-    if n<1:
-        raise()
-    mu = s/n
-    var = ss/n-mu*mu
-    return mu, var
+def run_command(command):
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None)
+    return iter(p.stdout.readline, b'')
 
-from scipy.stats import poisson
+def from_bamfile(filename):
+    cmd = ['samtools', 'depth', '-d', '0', '-a', filename]
+    hist = {}
 
-def splithist(distr, hist):
-    h0 = {}
-    h1 = {}
-    h2 = {}
-    h3 = {}
-    h4 = {}
-    mu, k0, k1, k2, k3, k4 = distr
-    # assign histogram to distrib
-    pz = (k0+k1+k2+k3+k4)/5000
-    for val,cnt in hist.items():
-        p0 = k0 * poisson.pmf(val, int(mu/2))  # prob of val under N(mu/2, sd/2)
-        p1 = k1 * poisson.pmf(val, int(mu))
-        p2 = k2 * poisson.pmf(val, int(mu*2))
-        p3 = k3 * poisson.pmf(val, int(mu*3))
-        p4 = k4 * poisson.pmf(val, int(mu*4))
-        ptot = p0 + p1 + p2 + p3 + p4 + pz
-        h0[val] = cnt*p0/ptot
-        h1[val] = cnt*p1/ptot
-        h2[val] = cnt*p2/ptot
-        h3[val] = cnt*p3/ptot
-        h4[val] = cnt*p4/ptot
-    return h0, h1, h2, h3, h4
+    for l in run_command(cmd):
+        i = int(l.split()[2])
+        if i in hist:
+            hist[i] += 1
+        else:
+            hist[i] = 1
+    return hist
 
-# assign a histogram to three distrs and re-estimate parameters
-def expmax(distr, hist):
-    h0, h1, h2, h3, h4 = splithist(distr, hist)
-    # re-estimate the parameters
-    mu0, var0 = estimate(h0)
-    mu1, var1 = estimate(h1)
-    mu2, var2 = estimate(h2)
-    mu3, var3 = estimate(h3)
-    mu4, var4 = estimate(h4)
-    # weight estimate
-    n0, n1, n2, n3, n4 = sum(h0.values()), sum(h1.values()), sum(h2.values()), sum(h3.values()), sum(h4.values())
-    new_mu = (n0*mu0*2 + n1*mu1 + n2*mu2/2)/(n0+n1+n2) # mu1 # (mu0*2*n0 + mu1*n1 + mu2/2*n2 + mu3/3*n3)/(n0+n1+n2+n3)
-    print(f'estimated distrs:  {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f} \r', end='')
-    return (new_mu, n0, n1, n2, n3, n4)
+def from_table(fileobj):
+    hist = {}
+    for l in fileobj.readlines():
+        ls = l.split()
+        hist[int(ls[1])] = float(ls[0])
+    return hist
 
-# criterion for end of convergence
-def same(d0, d1):
-    mu0, _, _, _, _, _ = d0
-    mu1, _, _, _, _, _ = d1
-    return(abs(mu0-mu1) < 0.001)
+if args.FILE is None:
+    full_hist = from_table(sys.stdin)
+elif args.bamfile:
+    full_hist = from_bamfile(args.FILE)
+else:
+    with open(args.FILE, 'r') as fd:
+        full_hist = from_table(fd)
 
-def integr(hist):
-    total = 0
+# for efficiency, work on range 1..1000
+hist = {}
+for x in range(1,1000):
+    if x in full_hist.keys():
+        hist[x] = full_hist[x]
+
+# estimate and compare        
+
+mu_, var_ = G.estimate(hist)
+r_, p_ = G.nbin_parms(mu_, var_)
+dist = 2, r_, p_, 1000, 1000.0, 2000.0, 1000.0, 1000.0, 1000.0
+
+def get_modal():
+    cur_cnt = 0
     for val, count in hist.items():
-        total = total + val*count
-    return total
+        if count > cur_cnt or val < mu_/2:
+            cur_cnt = count
+        else:
+            return val
 
-def integrate(distr, hist):
-    h0, h1, _, _, _ = splithist(distr, hist)
-    hs = {}
-    for val, cnt in hist.items():
-        hs[val] = cnt - h0[val] - h1[val]
-    haploid = integr(h0)
-    diploid = integr(h1)
-    repeats = integr(hs)
-    return haploid, diploid, repeats # NB! raw counts, divide by mu
+m = get_modal()
+g = G.integr(hist)/1e6
+print(f'Initial 1C estimates (using mu={mu_:.1f}, var={var_:.1f}): {g/mu_:.1f} Mbp; (using mode={m}): {g/m:.1f} Mbp')
 
-# iterate until convergence
-# d0 = None
-# while True:
-#     d1 = expmax(d0, hist)
-#    if same(d0,d1):
-#        break
-#    d0 = d1
+dist2 = G.expmax(dist, hist, args.verbose)
+# print('**',dist2)
 
-# todo: write a test
-#  - generate random data
-#  - check that we can recover it
+while(not G.same(dist,dist2)):
+      dist = dist2
+      dist2 = G.expmax(dist, hist, args.verbose)
+#      es = G.errors(dist2, hist)
+#      print('\r',dist2,end='')
+#      print('  root sum square errs:', sqrt(sum([e*e for e in es.values()])))
+#     print('  dist errs:', G.estimate(es))
+
+mux, r, p, kx, k0, k1, k2, k3, k4 = dist2
+
+if args.verbose:
+    print(f'\n  counts (million) {int(kx)/1e6:.3f} {int(k0)/1e6:.3f} {int(k1)/1e6:.3f} {int(k2)/1e6:.3f} {int(k3)/1e6:.3f} {int(k4)/1e6:.3f}\n')
+
+zs = full_hist[0]
+full_hist.pop(0, None)
+if args.plot:
+    G.res_plot(full_hist, dist2)
+
+low, hap, dip, rest = G.integrate(dist2, full_hist)
+mu = r*p/(1-p)
+print(f'Estimated total sequence, {(hap*2+dip+rest)/mu/1e6:f} Mbp,\n      haploid {hap*2/mu/1e6:f} diploid: {(dip+rest)/mu/1e6:f} (repeats: {rest/mu/1e6:f})')
+print(f'Zero-coverage: {zs/1e6:.3f} M loci, low coverage {low/1e6:.3f} M loci')
+print(f'Estimated total DNA (1C): {(hap+dip+rest)/mu/1e6:f} Mbp')
+
