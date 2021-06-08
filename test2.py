@@ -33,8 +33,13 @@ def from_table():
         hist[int(ls[1])] = float(ls[0])
     return hist
 
-hist = from_table()
-hist.pop(0, None)  # delete zero counts (often inflated)
+full_hist = from_table()
+
+# for efficiency, work on range 1..1000
+hist = {}
+for x in range(1,1000):
+    if x in full_hist.keys():
+        hist[x] = full_hist[x]
 
 # estimate and compare        
 
@@ -72,27 +77,10 @@ r, p, k0, k1, k2, k3, k4 = dist2
 print(f'counts {int(k0):10} {int(k1):10} {int(k2):10} {int(k3):10} {int(k4):10}')
 print('')
 
-from scipy.stats import nbinom
-
-def err_dist():
-  for k in range(1,int(2*mu)):
-    e0 = k0 * nbinom.pmf(k, r/2, 1-p)  # prob of val under N(mu/2, sd/2)
-    e1 = k1 * nbinom.pmf(k, r,   1-p)
-    e2 = k2 * nbinom.pmf(k, r*2, 1-p)
-    e3 = k3 * nbinom.pmf(k, r*3, 1-p)
-    e4 = k4 * nbinom.pmf(k, r*4, 1-p)
-    err = int(hist[k]-(e0+e1+e2+e3+e4))
-    if err < 0:
-        bar = '*'*(int(10*(-err)/hist[k]))
-    else:
-        bar = '-'*(int(10*err/hist[k]))
-    print(f'{k:03} {int(hist[k]):10} pred: {int(e0):10} {int(e1):10} {int(e2):10} {int(e3):10} {int(e4):10} err: {err:10}  {bar}')
-
-
-G.res_plot(hist, dist2)
+G.res_plot(full_hist, dist2)
 # err_dist()
     
-hap, dip, rest = G.integrate(dist2, hist)
+hap, dip, rest = G.integrate(dist2, full_hist)
 mu = r*p/(1-p)
 print()
 print(f'Estimated total sequence, {(hap*2+dip+rest)/mu/1e6:f} Mbp,\n      haploid {hap*2/mu/1e6:f} diploid: {(dip+rest)/mu/1e6:f} (repeats: {rest/mu/1e6:f})')

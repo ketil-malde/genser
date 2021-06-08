@@ -64,8 +64,9 @@ def expmax(distr, hist):
     mu = mu1 # (n0*mu0*2+n1*mu1+n2*mu2/2)/(n0+n1+n2)
     var = var1
     new_r, new_p = nbin_parms(mu, var)
+    new_dist = (new_r, new_p, n0, n1, n2, n3, n4)
     print(f'estimated distrs:  {mu0:.1f}±{var0:.1f} {mu1:.1f}±{var1:.1f} {mu2:.1f}±{var2:.1f} {mu3:.1f}±{var3:.1f} {mu4:.1f}±{var4:.1f}') # \r', end='')
-    return (new_r, new_p, n0, n1, n2, n3, n4)
+    return new_dist
 
 # criterion for end of convergence
 def same(d0, d1):
@@ -113,6 +114,22 @@ def res_plot(hist, distr):
 
     plt.show()    
 
+# Earlier version of res_plot, using textual output
+def err_dist():
+  for k in range(1,int(2*mu)):
+    e0 = k0 * nbinom.pmf(k, r/2, 1-p)  # prob of val under N(mu/2, sd/2)
+    e1 = k1 * nbinom.pmf(k, r,   1-p)
+    e2 = k2 * nbinom.pmf(k, r*2, 1-p)
+    e3 = k3 * nbinom.pmf(k, r*3, 1-p)
+    e4 = k4 * nbinom.pmf(k, r*4, 1-p)
+    err = int(hist[k]-(e0+e1+e2+e3+e4))
+    if err < 0:
+        bar = '*'*(int(10*(-err)/hist[k]))
+    else:
+        bar = '-'*(int(10*err/hist[k]))
+    print(f'{k:03} {int(hist[k]):10} pred: {int(e0):10} {int(e1):10} {int(e2):10} {int(e3):10} {int(e4):10} err: {err:10}  {bar}')
+
+    
 # iterate until convergence
 # d0 = None
 # while True:
